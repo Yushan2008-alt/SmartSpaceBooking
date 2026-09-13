@@ -1,13 +1,207 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================
+// APP MAKER (Multi-Tenancy)
+// =============================================
+model AppMaker {
+  id         Int      @id @default(autoincrement())
+  name       String
+  username   String   @unique
+  email      String   @unique
+  password   String
+  app_key    String   @unique // format: mk_xxx
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  users       User[]
+  members     Member[]
+  spaceOwners SpaceOwner[]
+  spaces      Space[]
+  diskons     Diskon[]
+  reservasis  Reservasi[]
+
+  @@map("app_maker")
+}
+
+// =============================================
+// USERS
+// =============================================
+model User {
+  id         Int      @id @default(autoincrement())
+  username   String
+  password   String
+  role       Role     @default(member)
+  maker_id   Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  maker      AppMaker    @relation(fields: [maker_id], references: [id], onDelete: Cascade)
+  member     Member?
+  spaceOwner SpaceOwner?
+
+  @@unique([username, maker_id])
+  @@map("users")
+}
+
+enum Role {
+  member
+  admin_space
+}
+
+// =============================================
+// MEMBER (Profil Pemesan)
+// =============================================
+model Member {
+  id          Int      @id @default(autoincrement())
+  user_id     Int      @unique
+  nama_member String
+  instansi    String
+  alamat      String
+  telp        String
+  foto        String?
+  maker_id    Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  user       User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  maker      AppMaker    @relation(fields: [maker_id], references: [id], onDelete: Cascade)
+  reservasis Reservasi[]
+
+  @@map("member")
+}
+
+// =============================================
+// SPACE OWNER (Profil Admin Space)
+// =============================================
+model SpaceOwner {
+  id             Int      @id @default(autoincrement())
+  user_id        Int      @unique
+  nama_coworking String
+  nama_pemilik   String
+  telp           String
+  maker_id       Int
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  user   User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  maker  AppMaker @relation(fields: [maker_id], references: [id], onDelete: Cascade)
+  spaces Space[]
+
+  @@map("space_owner")
+}
+
+// =============================================
+// SPACE (Ruangan / Meja)
+// =============================================
+model Space {
+  id             Int       @id @default(autoincrement())
+  nama_space     String
+  harga_per_jam  Int
+  tipe           SpaceTipe
+  kapasitas      Int
+  deskripsi      String
+  foto           String?
+  maker_id       Int
+  space_owner_id Int?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  maker            AppMaker          @relation(fields: [maker_id], references: [id], onDelete: Cascade)
+  spaceOwner       SpaceOwner?       @relation(fields: [space_owner_id], references: [id], onDelete: SetNull)
+  reservasis       Reservasi[]
+  detailReservasis DetailReservasi[]
+
+  @@map("space")
+}
+
+enum SpaceTipe {
+  desk
+  meeting_room
+  private_office
+}
+
+// =============================================
+// DISKON (Kode Promo)
+// =============================================
+model Diskon {
+  id                Int      @id @default(autoincrement())
+  nama_diskon       String
+  persentase_diskon Int
+  tanggal_awal      DateTime
+  tanggal_akhir     DateTime
+  maker_id          Int
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  maker            AppMaker          @relation(fields: [maker_id], references: [id], onDelete: Cascade)
+  reservasis       Reservasi[]
+  detailReservasis DetailReservasi[]
+
+  @@unique([nama_diskon, maker_id])
+  @@map("diskon")
+}
+
+// =============================================
+// RESERVASI
+// =============================================
+model Reservasi {
+  id                Int             @id @default(autoincrement())
+  kode_booking      String          @unique
+  id_member         Int
+  id_space          Int
+  id_diskon         Int?
+  tanggal_reservasi DateTime        @db.Date
+  jam_mulai         String
+  jam_selesai       String
+  durasi_jam        Int
+  harga_per_jam     Int
+  total_harga_awal  Int
+  potongan_diskon   Int             @default(0)
+  total_bayar       Int
+  status            ReservasiStatus @default(belum_dikonfirm)
+  maker_id          Int
+  created_at        DateTime        @default(now())
+  updated_at        DateTime        @updatedAt
+
+  member           Member            @relation(fields: [id_member], references: [id], onDelete: Cascade)
+  space            Space             @relation(fields: [id_space], references: [id], onDelete: Cascade)
+  diskon           Diskon?           @relation(fields: [id_diskon], references: [id], onDelete: SetNull)
+  maker            AppMaker          @relation(fields: [maker_id], references: [id], onDelete: Cascade)
+  detailReservasis DetailReservasi[]
+
+  @@map("reservasi")
+}
+
+enum ReservasiStatus {
+  belum_dikonfirm
+  disetujui
+  aktif
+  selesai
+  dibatalkan
+}
+
+// =============================================
+// DETAIL RESERVASI (Junction Sesuai ERD Bagian 8)
+// =============================================
+model DetailReservasi {
+  id           Int      @id @default(autoincrement())
+  id_reservasi Int
+  id_space     Int
+  id_diskon    Int?
+  total_harga  Int
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  reservasi Reservasi @relation(fields: [id_reservasi], references: [id], onDelete: Cascade)
+  space     Space     @relation(fields: [id_space], references: [id], onDelete: Cascade)
+  diskon    Diskon?   @relation(fields: [id_diskon], references: [id], onDelete: SetNull)
+
+  @@map("detail_reservasi")
 }
