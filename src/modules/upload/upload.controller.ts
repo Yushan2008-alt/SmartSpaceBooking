@@ -1,0 +1,115 @@
+import {
+  Controller,
+  Post,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  Req,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiHeader,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
+import { diskStorage } from 'multer';
+import { extname, join } from 'node:path';
+import { mkdirSync } from 'node:fs';
+import type { Request } from 'express';
+import { MakerAuthGuard } from '../../common/guards/maker-auth.guard';
+import { JwtUserAuthGuard } from '../../common/guards/jwt-user-auth.guard';
+
+const IMAGE_MIME = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
+
+function storageFor(kategori: 'general' | 'spaces' | 'members') {
+  return diskStorage({
+    destination: (_req, _file, cb) => {
+      const dir = join(process.cwd(), 'uploads', kategori);
+      mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (_req, file, cb) => {
+      const unique = `${kategori}-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+      cb(null, `${unique}${extname(file.originalname).toLowerCase()}`);
+    },
+  });
+}
+
+function uploadOptions(kategori: 'general' | 'spaces' | 'members') {
+  return {
+    storage: storageFor(kategori),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req: any, file: Express.Multer.File, cb: any) => {
+      if (!IMAGE_MIME.includes(file.mimetype)) {
+        return cb(new BadRequestException('Hanya berkas gambar (jpeg/png/webp/gif) yang diizinkan.'), false);
+      }
+      cb(null, true);
+    },
+  };
+}
+
+const apiFileBody = {
+  schema: {
+    type: 'object',
+    properties: { file: { type: 'string', format: 'binary' } },
+    required: ['file'],
+  },
+};
+
+@ApiTags('Upload Media')
+@Controller('api/upload')
+@UseGuards(MakerAuthGuard, JwtUserAuthGuard)
+@ApiHeader({ name: 'x-maker-key', description: 'App key unik siswa untuk isolasi multi-tenant', required: true })
+@ApiBearerAuth('JWT-auth')
+export class UploadController {
+  private result(req: Request, kategori: string, file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException('Berkas gambar wajib disertakan pada field "file".');
+    const base = `${req.protocol}://${req.get('host')}`;
+    return {
+      message: 'Berkas gambar berhasil diunggah.',
+      data: {
+        filename: file.filename,
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        kategori,
+        url: `${base}/uploads/${kategori}/${file.filename}`,
+      },
+    };
+  }
+
+  @Post('image')
+  @UseInterceptors(FileInterceptor('file', uploadOptions('general')))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody(apiFileBody)
+  @ApiOperation({ summary: 'Upload Berkas Gambar Umum (Endpoint #48)' })
+  @ApiResponse({ status: 201, description: 'Berkas terunggah' })
+  uploadGeneral(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+    return this.result(req, 'general', file);
+  }
+
+  @Post('spaces')
+  @UseInterceptors(FileInterceptor('file', uploadOptions('spaces')))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody(apiFileBody)
+  @ApiOperation({ summary: 'Upload Foto Ruangan / Meja Space (Endpoint #49)' })
+  @ApiResponse({ status: 201, description: 'Foto space terunggah' })
+  uploadSpace(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+    return this.result(req, 'spaces', file);
+  }
+
+  @Post('members')
+  @UseInterceptors(FileInterceptor('file', uploadOptions('members')))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody(apiFileBody)
+  @ApiOperation({ summary: 'Upload Foto Profil Member / Pelanggan (Endpoint #50)' })
+  @ApiResponse({ status: 201, description: 'Foto member terunggah' })
+  uploadMember(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+    return this.result(req, 'members', file);
+  }
+}
