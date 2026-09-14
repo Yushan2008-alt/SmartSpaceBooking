@@ -24,6 +24,3 @@ Thumbs.db
 
 # Prisma
 /generated/prisma
-
-# Uploaded media (generated at runtime, served statically)
-/uploads
