@@ -13,13 +13,11 @@ import { AdminModule } from './modules/admin/admin.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { join } from 'node:path';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-    }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     MakerModule,
     AuthModule,
     SpacesModule,
@@ -35,3 +33,4 @@ import { PrismaModule } from './prisma/prisma.module';
   exports: [DatabaseService, CloudinaryService],
 })
 export class AppModule {}
+

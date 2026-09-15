@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, INestApplication } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express, { Request, Response } from 'express';
 import dns from 'node:dns';
+import { join } from 'node:path';
 import { AppModule } from './app.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -16,8 +18,9 @@ try {
 const server = express();
 let isInitialized = false;
 
-function setupApp(app: INestApplication) {
+function setupApp(app: NestExpressApplication) {
   app.enableCors();
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -50,7 +53,7 @@ function setupApp(app: INestApplication) {
 
 export async function bootstrapServer() {
   if (!isInitialized) {
-    const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, new ExpressAdapter(server));
     setupApp(app);
     await app.init();
     isInitialized = true;
@@ -67,7 +70,7 @@ export default async function handler(req: Request, res: Response) {
 // Run locally when not in Vercel environment
 if (!process.env.VERCEL) {
   async function bootstrapLocal() {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create<NestExpressApplication>(AppModule);
     setupApp(app);
     const port = process.env.PORT ?? 3000;
     await app.listen(port);
