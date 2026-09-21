@@ -45,8 +45,20 @@ function setupApp(app: NestExpressApplication) {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+  const SWAGGER_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.18.2';
   SwaggerModule.setup('docs', app, document, {
     customSiteTitle: 'Smart Space Booking API Docs',
+    customfavIcon:
+      'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏢</text></svg>',
+    customCssUrl: [`${SWAGGER_CDN}/swagger-ui.min.css`],
+    customJs: [
+      `${SWAGGER_CDN}/swagger-ui-bundle.min.js`,
+      `${SWAGGER_CDN}/swagger-ui-standalone-preset.min.js`,
+    ],
+    customCss: `
+      .swagger-ui .topbar { display: none }
+      .swagger-ui .info { margin: 20px 0; }
+    `,
   });
 }
 

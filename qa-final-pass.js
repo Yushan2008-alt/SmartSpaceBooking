@@ -135,9 +135,10 @@ async function runQA() {
 
   // 5. Reservasi Member & State Machine
   console.log('\n--- 5. RESERVASI & WORKFLOW CHECK-IN/OUT ---');
+  const randomDay = String(Math.floor(Math.random() * 25) + 1).padStart(2, '0');
   const booking = await request('POST', '/api/reservasi', {
     id_space: testSpace.id,
-    tanggal_reservasi: '2026-12-05',
+    tanggal_reservasi: `2027-01-${randomDay}`,
     jam_mulai: '08:00',
     durasi_jam: 2,
     kode_promo: 'DISKONHEMAT20',
