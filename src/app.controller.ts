@@ -22,10 +22,9 @@ export class AppController {
       docs: '/docs',
       environment: process.env.VERCEL ? 'vercel-serverless' : 'local-development',
       instructions: {
-        step_1: 'Daftarkan akun App Maker di POST /api/maker/register untuk mendapatkan x-maker-key.',
-        step_2: 'Sertakan header x-maker-key: <app_key> pada seluruh request data untuk isolasi multi-tenant.',
-        step_3: 'Daftarkan Member atau Admin Space di POST /api/auth/register/* lalu login di POST /api/auth/login.',
-        step_4: 'Sertakan header Authorization: Bearer <access_token> untuk endpoint terproteksi.',
+        step_1: 'Daftarkan Member atau Admin Space di POST /api/auth/register/* lalu login di POST /api/auth/login.',
+        step_2: 'Sertakan header Authorization: Bearer <access_token> untuk endpoint terproteksi.',
+        step_3: 'Akses dokumentasi interaktif Swagger di /docs.',
       },
     };
   }

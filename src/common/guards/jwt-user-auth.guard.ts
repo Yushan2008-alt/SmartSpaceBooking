@@ -45,7 +45,6 @@ export class JwtUserAuthGuard implements CanActivate {
       req.user = user;
       req.user_id = user.id;
       req.user_role = user.role;
-      req.maker_id = user.maker_id;
 
       return true;
     } catch (err) {

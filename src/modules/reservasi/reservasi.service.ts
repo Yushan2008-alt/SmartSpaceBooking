@@ -20,10 +20,10 @@ export class ReservasiService {
     private readonly stateService: ReservasiStateService,
   ) {}
 
-  async create(dto: CreateReservasiDto, userId: number, makerId: number) {
-    // 1. Validasi space di bawah tenant
-    const space = await this.prisma.space.findFirst({
-      where: { id: dto.id_space, maker_id: makerId },
+  async create(dto: CreateReservasiDto, userId: number) {
+    // 1. Validasi space
+    const space = await this.prisma.space.findUnique({
+      where: { id: dto.id_space },
     });
     if (!space) {
       throw new NotFoundException(`Space dengan ID ${dto.id_space} tidak ditemukan.`);
@@ -45,7 +45,6 @@ export class ReservasiService {
     const conflict = await this.prisma.reservasi.findFirst({
       where: {
         id_space: dto.id_space,
-        maker_id: makerId,
         tanggal_reservasi: targetDate,
         status: { not: ReservasiStatus.dibatalkan },
         jam_mulai: { lt: jam_selesai },
@@ -67,8 +66,8 @@ export class ReservasiService {
     const now = new Date();
 
     if (dto.id_diskon) {
-      const diskon = await this.prisma.diskon.findFirst({
-        where: { id: dto.id_diskon, maker_id: makerId },
+      const diskon = await this.prisma.diskon.findUnique({
+        where: { id: dto.id_diskon },
       });
       if (!diskon) {
         throw new NotFoundException(`Promo diskon dengan ID ${dto.id_diskon} tidak ditemukan.`);
@@ -79,8 +78,8 @@ export class ReservasiService {
       appliedDiskonId = diskon.id;
       potongan_diskon = Math.floor((total_harga_awal * diskon.persentase_diskon) / 100);
     } else if (dto.kode_promo) {
-      const diskon = await this.prisma.diskon.findFirst({
-        where: { nama_diskon: dto.kode_promo.trim(), maker_id: makerId },
+      const diskon = await this.prisma.diskon.findUnique({
+        where: { nama_diskon: dto.kode_promo.trim() },
       });
       if (!diskon) {
         throw new NotFoundException(`Kode promo '${dto.kode_promo}' tidak ditemukan.`);
@@ -116,7 +115,6 @@ export class ReservasiService {
           potongan_diskon,
           total_bayar,
           status: ReservasiStatus.belum_dikonfirm,
-          maker_id: makerId,
         },
         include: {
           space: true,
@@ -143,7 +141,7 @@ export class ReservasiService {
     };
   }
 
-  async getMyReservations(userId: number, makerId: number) {
+  async getMyReservations(userId: number) {
     const member = await this.prisma.member.findUnique({
       where: { user_id: userId },
     });
@@ -152,7 +150,7 @@ export class ReservasiService {
     }
 
     const reservasis = await this.prisma.reservasi.findMany({
-      where: { id_member: member.id, maker_id: makerId },
+      where: { id_member: member.id },
       include: {
         space: true,
         diskon: true,
@@ -166,7 +164,7 @@ export class ReservasiService {
     };
   }
 
-  async getMyHistory(userId: number, makerId: number, query: HistoryQueryDto) {
+  async getMyHistory(userId: number, query: HistoryQueryDto) {
     const member = await this.prisma.member.findUnique({
       where: { user_id: userId },
     });
@@ -176,7 +174,6 @@ export class ReservasiService {
 
     const where: any = {
       id_member: member.id,
-      maker_id: makerId,
     };
 
     if (query.year && query.month) {
@@ -223,9 +220,9 @@ export class ReservasiService {
     };
   }
 
-  async getETicket(id: number, user: any, maker: any) {
-    const reservasi = await this.prisma.reservasi.findFirst({
-      where: { id, maker_id: maker.id },
+  async getETicket(id: number, user: any) {
+    const reservasi = await this.prisma.reservasi.findUnique({
+      where: { id },
       include: {
         space: true,
         member: true,
@@ -242,8 +239,7 @@ export class ReservasiService {
       throw new ForbiddenException('Anda tidak berhak melihat e-ticket pemesanan orang lain.');
     }
 
-    const appKey = maker.app_key || 'unknown';
-    const qr_code_payload = `VERIFY-RESERVASI-${reservasi.id}-${appKey}`;
+    const qr_code_payload = `VERIFY-RESERVASI-${reservasi.id}-${reservasi.kode_booking}`;
 
     return {
       message: 'E-Ticket reservasi berhasil dimuat.',
@@ -281,9 +277,9 @@ export class ReservasiService {
     };
   }
 
-  async getDetail(id: number, user: any, makerId: number) {
-    const reservasi = await this.prisma.reservasi.findFirst({
-      where: { id, maker_id: makerId },
+  async getDetail(id: number, user: any) {
+    const reservasi = await this.prisma.reservasi.findUnique({
+      where: { id },
       include: {
         space: true,
         member: true,
@@ -306,9 +302,9 @@ export class ReservasiService {
     };
   }
 
-  async cancel(id: number, user: any, makerId: number) {
-    const reservasi = await this.prisma.reservasi.findFirst({
-      where: { id, maker_id: makerId },
+  async cancel(id: number, user: any) {
+    const reservasi = await this.prisma.reservasi.findUnique({
+      where: { id },
       include: { member: true },
     });
 

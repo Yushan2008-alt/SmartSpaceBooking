@@ -20,18 +20,13 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async registerMember(dto: RegisterMemberDto, makerId: number) {
+  async registerMember(dto: RegisterMemberDto) {
     const existing = await this.prisma.user.findUnique({
-      where: {
-        username_maker_id: {
-          username: dto.username,
-          maker_id: makerId,
-        },
-      },
+      where: { username: dto.username },
     });
 
     if (existing) {
-      throw new ConflictException('Username sudah terdaftar pada tenant ini.');
+      throw new ConflictException('Username sudah terdaftar.');
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -41,7 +36,6 @@ export class AuthService {
         username: dto.username,
         password: hashedPassword,
         role: Role.member,
-        maker_id: makerId,
         member: {
           create: {
             nama_member: dto.nama_member,
@@ -49,7 +43,6 @@ export class AuthService {
             alamat: dto.alamat,
             telp: dto.telp,
             foto: dto.foto || null,
-            maker_id: makerId,
           },
         },
       },
@@ -65,18 +58,13 @@ export class AuthService {
     };
   }
 
-  async registerAdminSpace(dto: RegisterAdminSpaceDto, makerId: number) {
+  async registerAdminSpace(dto: RegisterAdminSpaceDto) {
     const existing = await this.prisma.user.findUnique({
-      where: {
-        username_maker_id: {
-          username: dto.username,
-          maker_id: makerId,
-        },
-      },
+      where: { username: dto.username },
     });
 
     if (existing) {
-      throw new ConflictException('Username sudah terdaftar pada tenant ini.');
+      throw new ConflictException('Username sudah terdaftar.');
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -86,13 +74,11 @@ export class AuthService {
         username: dto.username,
         password: hashedPassword,
         role: Role.admin_space,
-        maker_id: makerId,
         spaceOwner: {
           create: {
             nama_coworking: dto.nama_coworking,
             nama_pemilik: dto.nama_pemilik,
             telp: dto.telp,
-            maker_id: makerId,
           },
         },
       },
@@ -108,14 +94,9 @@ export class AuthService {
     };
   }
 
-  async login(dto: LoginDto, makerId: number) {
+  async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
-      where: {
-        username_maker_id: {
-          username: dto.username,
-          maker_id: makerId,
-        },
-      },
+      where: { username: dto.username },
       include: {
         member: true,
         spaceOwner: true,
@@ -140,7 +121,6 @@ export class AuthService {
         sub: user.id,
         username: user.username,
         role: user.role,
-        maker_id: user.maker_id,
       },
       secret,
       { expiresIn: '7d' },

@@ -15,28 +15,20 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiHeader,
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
 import { AdminService } from '../admin.service';
 import { QueryAdminReservasiDto } from '../dto/query-admin-reservasi.dto';
 import { UpdateReservasiStatusDto } from '../dto/update-reservasi-status.dto';
-import { MakerAuthGuard } from '../../../common/guards/maker-auth.guard';
 import { JwtUserAuthGuard } from '../../../common/guards/jwt-user-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
-import { MakerId } from '../../../common/decorators/maker.decorator';
 
 @ApiTags('Reservasi & Check-in/out (Admin)')
 @Controller('api/admin/reservasi')
-@UseGuards(MakerAuthGuard, JwtUserAuthGuard, RolesGuard)
+@UseGuards(JwtUserAuthGuard, RolesGuard)
 @Roles('admin_space')
-@ApiHeader({
-  name: 'x-maker-key',
-  description: 'App key unik siswa untuk isolasi multi-tenant',
-  required: true,
-})
 @ApiBearerAuth('JWT-auth')
 export class AdminReservasiController {
   constructor(private readonly adminService: AdminService) {}
@@ -48,11 +40,8 @@ export class AdminReservasiController {
       'Melihat daftar semua reservasi milik coworking space dengan filter bulan, tahun, status, space, atau tanggal spesifik.',
   })
   @ApiResponse({ status: 200, description: 'Daftar reservasi berhasil dimuat' })
-  findAllReservasi(
-    @MakerId() makerId: number,
-    @Query() query: QueryAdminReservasiDto,
-  ) {
-    return this.adminService.findAllReservasi(makerId, query);
+  findAllReservasi(@Query() query: QueryAdminReservasiDto) {
+    return this.adminService.findAllReservasi(query);
   }
 
   @Patch(':id/status')
@@ -67,10 +56,9 @@ export class AdminReservasiController {
   @ApiResponse({ status: 404, description: 'Reservasi tidak ditemukan' })
   updateReservasiStatus(
     @Param('id', ParseIntPipe) id: number,
-    @MakerId() makerId: number,
     @Body() dto: UpdateReservasiStatusDto,
   ) {
-    return this.adminService.updateReservasiStatus(id, makerId, dto.status);
+    return this.adminService.updateReservasiStatus(id, dto.status);
   }
 
   @Post(':id/check-in')
@@ -84,8 +72,8 @@ export class AdminReservasiController {
   @ApiResponse({ status: 200, description: 'Check-in berhasil. Status sekarang aktif.' })
   @ApiResponse({ status: 400, description: 'Status reservasi bukan disetujui' })
   @ApiResponse({ status: 404, description: 'Reservasi tidak ditemukan' })
-  checkIn(@Param('id', ParseIntPipe) id: number, @MakerId() makerId: number) {
-    return this.adminService.checkIn(id, makerId);
+  checkIn(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.checkIn(id);
   }
 
   @Post(':id/check-out')
@@ -99,7 +87,7 @@ export class AdminReservasiController {
   @ApiResponse({ status: 200, description: 'Check-out berhasil. Status sekarang selesai.' })
   @ApiResponse({ status: 400, description: 'Status reservasi bukan aktif' })
   @ApiResponse({ status: 404, description: 'Reservasi tidak ditemukan' })
-  checkOut(@Param('id', ParseIntPipe) id: number, @MakerId() makerId: number) {
-    return this.adminService.checkOut(id, makerId);
+  checkOut(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.checkOut(id);
   }
 }

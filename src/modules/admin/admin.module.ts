@@ -6,7 +6,6 @@ import { AdminDiskonController } from './controllers/admin-diskon.controller';
 import { AdminReservasiController } from './controllers/admin-reservasi.controller';
 import { AdminService } from './admin.service';
 import { ReservasiModule } from '../reservasi/reservasi.module';
-import { MakerAuthGuard } from '../../common/guards/maker-auth.guard';
 import { JwtUserAuthGuard } from '../../common/guards/jwt-user-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 
@@ -21,7 +20,6 @@ import { RolesGuard } from '../../common/guards/roles.guard';
   ],
   providers: [
     AdminService,
-    MakerAuthGuard,
     JwtUserAuthGuard,
     RolesGuard,
   ],

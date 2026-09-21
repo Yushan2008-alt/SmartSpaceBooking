@@ -1,98 +1,225 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Smart Space Booking — REST API Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend REST API untuk Sistem Reservasi Coworking Space & Workstation (Uji Kompetensi Keahlian RPL 2026/2027 Paket B).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Dibangun menggunakan **NestJS**, **Prisma ORM**, **PostgreSQL (Supabase)**, dan **Cloudinary**.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🚀 Tech Stack
+- **Runtime & Framework:** Node.js (>= 18), [NestJS](https://nestjs.com/) v11
+- **Database Layer:** PostgreSQL hosted on [Supabase](https://supabase.com/), [Prisma ORM](https://www.prisma.io/) v6
+- **Media Storage:** Dual Storage Abstraction (Local Disk Storage untuk development lokal & [Cloudinary](https://cloudinary.com/) untuk deployment/cloud)
+- **Authentication & Security:** JSON Web Tokens (JWT), Bcrypt hashing, Role-Based Access Control (`member`, `admin_space`)
+- **API Documentation:** OpenAPI 3.0 via [@nestjs/swagger](https://docs.nestjs.com/openapi/introduction)
+- **Deployment Target:** [Vercel Serverless Functions](https://vercel.com/)
 
-## Project setup
+---
 
-```bash
-$ npm install
+## 📁 Struktur Direktori Utama
+```text
+src/
+├── app.controller.ts            # Root & Health check
+├── app.module.ts                # Root module
+├── main.ts                      # Bootstrap server, static assets, & Swagger
+├── common/                      # Interceptor envelope global, exception filter, decorators, guards
+├── modules/
+│   ├── auth/                    # Register member/admin & login
+│   ├── spaces/                  # Katalog space & cek ketersediaan (overlap detection)
+│   ├── diskon/                  # Promo aktif & validasi potongan kupon
+│   ├── reservasi/               # Checkout pemesanan, e-ticket, & state machine
+│   ├── admin/                   # Profil lokasi, manajemen member, space, diskon, reservasi, check-in/out
+│   ├── reports/                 # Laporan pendapatan bulanan & breakdown per tipe
+│   └── upload/                  # Upload berkas gambar dengan Dual Storage Abstraction
+└── prisma/                      # Prisma service & database module
 ```
 
-## Compile and run the project
+---
 
+## ⚙️ Persyaratan Sistem & Instalasi
+
+### 1. Prasyarat
+- Node.js versi 18.x atau 20.x / 22.x
+- npm versi 9.x atau lebih baru
+
+### 2. Instalasi Dependensi
 ```bash
-# development
-$ npm run start
+# Clone repository
+git clone https://github.com/Yushan2008-alt/SmartSpaceBooking.git
+cd SmartSpaceBooking
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+# Install dependencies
+npm install
 ```
 
-## Run tests
+---
 
+## 🔑 Konfigurasi Environment Variables (`.env`)
+
+Salin file `.env.example` menjadi `.env`:
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env
 ```
 
-## Deployment
+Isi konfigurasi berikut sesuai environment Anda:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+| Variabel | Deskripsi | Contoh Nilai |
+| :--- | :--- | :--- |
+| `DATABASE_URL` | Connection string PostgreSQL Supabase | `postgresql://postgres.[ref]:[pass]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require` |
+| `PORT` | Port server lokal | `3000` |
+| `JWT_SECRET_USER` | Secret key untuk signing JWT Token | `smart_space_user_super_secret_jwt_key_2026` |
+| `STORAGE_TYPE` | Driver upload (`local` / `cloudinary`) | `cloudinary` |
+| `CLOUDINARY_CLOUD_NAME` | Cloud Name akun Cloudinary | `your_cloud_name` |
+| `CLOUDINARY_API_KEY` | API Key akun Cloudinary | `your_api_key` |
+| `CLOUDINARY_API_SECRET` | API Secret akun Cloudinary | `your_api_secret` |
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+> **Catatan Dual Storage:** Pada mode lokal (`NODE_ENV=local` atau `STORAGE_TYPE=local`), file disimpan ke folder lokal `uploads/<kategori>/<file>` dan dapat diakses statis via `http://localhost:3000/uploads/...`. Di environment cloud/Vercel (`NODE_ENV=production`), sistem otomatis beralih menggunakan Cloudinary Storage.
 
+---
+
+## 🗄️ Sinkronisasi Basis Data & Seeding Awal
+
+### 1. Sinkronisasi Schema Prisma
+Untuk menerapkan skema database ke database PostgreSQL Supabase:
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npx prisma db push
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Atau bila menjalankan migrasi:
+```bash
+npx prisma migrate deploy
+```
 
-## Resources
+### 2. Jalankan Seeding Data Awal
+Inisialisasi akun demo dan data bawaan:
+```bash
+npx ts-node prisma/seed.ts
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+#### 👤 Kredensial Bawaan Seeding:
+- **Admin Coworking Space:**
+  - Username: `admin_moklet`
+  - Password: `Admin123!`
+  - Role: `admin_space`
+  - Nama Coworking: `Moklet Hub Coworking Space`
+- **Member (Pelanggan):**
+  - Username: `johndoe`
+  - Password: `Secret123!`
+  - Role: `member`
+- **Kode Promo Bawaan:**
+  - Kode: `DISKONHEMAT20` (Diskon 20%, Aktif sepanjang tahun 2026)
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+---
 
-## Support
+## ▶️ Menjalankan Aplikasi
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Mode Development (Lokal)
+```bash
+npm run start:dev
+```
+Server akan aktif di: **`http://localhost:3000`**
 
-## Stay in touch
+### Mode Production (Build & Start)
+```bash
+npm run build
+npm run start:prod
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Akses Dokumentasi Swagger UI
+Buka browser dan navigasi ke:
+- **Lokal:** `http://localhost:3000/docs`
+- **OpenAPI JSON Spec:** `http://localhost:3000/docs-json`
 
-## License
+---
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## ☁️ Deployment ke Vercel (Production)
+
+Proyek ini telah dikonfigurasi menggunakan file [`vercel.json`](./vercel.json) untuk berjalan secara serverless di Vercel:
+
+1. **Push Perubahan ke GitHub:**
+   ```bash
+   git add .
+   git commit -m "feat: complete Smart Space Booking REST API"
+   git push origin main
+   ```
+2. **Setup Proyek di Vercel Dashboard:**
+   - Import repository `Yushan2008-alt/SmartSpaceBooking`.
+   - Pada **Environment Variables**, tambahkan:
+     - `DATABASE_URL`
+     - `JWT_SECRET_USER`
+     - `STORAGE_TYPE` = `cloudinary`
+     - `CLOUDINARY_CLOUD_NAME`
+     - `CLOUDINARY_API_KEY`
+     - `CLOUDINARY_API_SECRET`
+3. Vercel akan otomatis menjalankan `npm run build` (`prisma generate && nest build`) dan men-deploy API secara global.
+4. Akses Swagger di URL hosting: `https://<nama-proyek-anda>.vercel.app/docs`.
+
+---
+
+## 📮 Postman Collection
+
+File Postman Collection v2.1 telah disertakan di root repository:
+- **File:** [`SmartSpaceBooking.postman_collection.json`](./SmartSpaceBooking.postman_collection.json)
+
+### Cara Import ke Postman:
+1. Buka Postman -> Klik tombol **Import**.
+2. Pilih file `SmartSpaceBooking.postman_collection.json`.
+3. Variabel `baseUrl` default diatur ke `http://localhost:3000` (atau ganti ke domain Vercel Anda).
+4. Lakukan request `POST /api/auth/login` (Admin/Member) untuk mengisi token secara otomatis.
+
+---
+
+## 📋 Ringkasan Katalog Endpoint
+
+| Modul | Method | Endpoint | Keterangan |
+| :--- | :---: | :--- | :--- |
+| **Root & Health** | `GET` | `/` | Informasi status API & panduan |
+| | `GET` | `/health` | Health check server |
+| **Auth** | `POST`| `/api/auth/register/member` | Registrasi akun pelanggan/member |
+| | `POST`| `/api/auth/register/admin-space` | Registrasi pengelola/admin space |
+| | `POST`| `/api/auth/login` | Login universal (mengembalikan token JWT) |
+| | `GET` | `/api/auth/profile` | Profil akun yang sedang login |
+| **Spaces** | `GET` | `/api/spaces/types` | Daftar tipe space (Desk, Meeting, Office) |
+| | `GET` | `/api/spaces/availability` | Cek overlap jadwal ketersediaan space |
+| | `GET` | `/api/spaces` | Katalog space (filter `?tipe`, `?search`) |
+| | `GET` | `/api/spaces/:id` | Detail data space |
+| **Diskon** | `GET` | `/api/diskon/active` | Daftar promo aktif hari ini |
+| | `POST`| `/api/diskon/check` | Validasi kode promo & hitung potongan harga |
+| | `GET` | `/api/diskon/:id` | Detail promo diskon |
+| **Reservasi (Member)** | `POST`| `/api/reservasi` | Checkout pemesanan space |
+| | `GET` | `/api/reservasi/my` | Daftar reservasi aktif milik saya |
+| | `GET` | `/api/reservasi/my/history` | Riwayat transaksi (`?month`, `?year`, total belanja) |
+| | `GET` | `/api/reservasi/:id/e-ticket`| Nota digital & string QR code |
+| | `GET` | `/api/reservasi/:id` | Detail transaksi reservasi |
+| | `PATCH`| `/api/reservasi/:id/cancel`| Pembatalan pemesanan |
+| **Admin Profil** | `GET` | `/api/admin/profile` | Profil lokasi coworking admin |
+| | `PUT` | `/api/admin/profile` | Update informasi lokasi & pengelola |
+| **Admin Member** | `GET` | `/api/admin/members` | Daftar seluruh member |
+| | `POST`| `/api/admin/members` | Tambah member baru dari admin |
+| | `GET` | `/api/admin/members/:id` | Detail member |
+| | `PUT` | `/api/admin/members/:id` | Update data member & reset password |
+| | `DELETE`| `/api/admin/members/:id`| Hapus member |
+| **Admin Spaces** | `GET` | `/api/admin/spaces` | Daftar space milik admin |
+| | `POST`| `/api/admin/spaces` | Tambah ruangan/meja workstation |
+| | `GET` | `/api/admin/spaces/:id` | Detail space |
+| | `PUT` | `/api/admin/spaces/:id` | Update fasilitas / harga space |
+| | `DELETE`| `/api/admin/spaces/:id`| Hapus space |
+| **Admin Diskon** | `GET` | `/api/admin/diskon` | Daftar semua event promo |
+| | `POST`| `/api/admin/diskon` | Buat promo diskon baru |
+| | `GET` | `/api/admin/diskon/:id` | Detail diskon |
+| | `PUT` | `/api/admin/diskon/:id` | Update promo diskon |
+| | `DELETE`| `/api/admin/diskon/:id`| Hapus promo diskon |
+| **Admin Reservasi** | `GET` | `/api/admin/reservasi` | Filter reservasi (`?month`, `?year`, `?status`, `?tanggal`) |
+| | `PATCH`| `/api/admin/reservasi/:id/status`| Update status reservasi (State Machine) |
+| | `POST`| `/api/admin/reservasi/:id/check-in` | Check-in member di lokasi (`disetujui` $\rightarrow$ `aktif`) |
+| | `POST`| `/api/admin/reservasi/:id/check-out`| Check-out member (`aktif` $\rightarrow$ `selesai`) |
+| **Reports** | `GET` | `/api/admin/reports/monthly` | Rekapitulasi pendapatan & breakdown per tipe |
+| | `GET` | `/api/admin/reports/income` | Ringkasan income bulanan |
+| **Upload** | `POST`| `/api/upload/image` | Upload berkas gambar umum |
+| | `POST`| `/api/upload/spaces` | Upload foto space/ruangan |
+| | `POST`| `/api/upload/members` | Upload foto profil pelanggan |
+
+---
+
+## 📄 Lisensi
+UNLICENSED — Proyek Uji Kompetensi Keahlian (UKK) Rekayasa Perangkat Lunak 2026/2027.

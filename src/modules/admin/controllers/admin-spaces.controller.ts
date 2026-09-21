@@ -15,28 +15,20 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiHeader,
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
 import { AdminService } from '../admin.service';
 import { CreateSpaceDto } from '../dto/create-space.dto';
 import { UpdateSpaceDto } from '../dto/update-space.dto';
-import { MakerAuthGuard } from '../../../common/guards/maker-auth.guard';
 import { JwtUserAuthGuard } from '../../../common/guards/jwt-user-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
-import { MakerId } from '../../../common/decorators/maker.decorator';
 
 @ApiTags('Manajemen Space (Admin)')
 @Controller('api/admin/spaces')
-@UseGuards(MakerAuthGuard, JwtUserAuthGuard, RolesGuard)
+@UseGuards(JwtUserAuthGuard, RolesGuard)
 @Roles('admin_space')
-@ApiHeader({
-  name: 'x-maker-key',
-  description: 'App key unik siswa untuk isolasi multi-tenant',
-  required: true,
-})
 @ApiBearerAuth('JWT-auth')
 export class AdminSpacesController {
   constructor(private readonly adminService: AdminService) {}
@@ -47,8 +39,8 @@ export class AdminSpacesController {
     description: 'Menampilkan seluruh daftar space yang terdaftar di lokasi admin coworking.',
   })
   @ApiResponse({ status: 200, description: 'Daftar space berhasil dimuat' })
-  findAllSpaces(@MakerId() makerId: number) {
-    return this.adminService.findAllSpaces(makerId);
+  findAllSpaces() {
+    return this.adminService.findAllSpaces();
   }
 
   @Post()
@@ -58,8 +50,8 @@ export class AdminSpacesController {
     description: 'Admin menambahkan ruangan atau meja baru beserta tarif sewa dan fasilitas.',
   })
   @ApiResponse({ status: 201, description: 'Space baru berhasil ditambahkan' })
-  createSpace(@MakerId() makerId: number, @Body() dto: CreateSpaceDto) {
-    return this.adminService.createSpace(makerId, dto);
+  createSpace(@Body() dto: CreateSpaceDto) {
+    return this.adminService.createSpace(dto);
   }
 
   @Get(':id')
@@ -70,8 +62,8 @@ export class AdminSpacesController {
   @ApiParam({ name: 'id', description: 'ID Space', type: Number })
   @ApiResponse({ status: 200, description: 'Detail space ditemukan' })
   @ApiResponse({ status: 404, description: 'Space tidak ditemukan' })
-  findSpaceById(@Param('id', ParseIntPipe) id: number, @MakerId() makerId: number) {
-    return this.adminService.findSpaceById(id, makerId);
+  findSpaceById(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.findSpaceById(id);
   }
 
   @Put(':id')
@@ -84,10 +76,9 @@ export class AdminSpacesController {
   @ApiResponse({ status: 404, description: 'Space tidak ditemukan' })
   updateSpace(
     @Param('id', ParseIntPipe) id: number,
-    @MakerId() makerId: number,
     @Body() dto: UpdateSpaceDto,
   ) {
-    return this.adminService.updateSpace(id, makerId, dto);
+    return this.adminService.updateSpace(id, dto);
   }
 
   @Delete(':id')
@@ -98,7 +89,7 @@ export class AdminSpacesController {
   @ApiParam({ name: 'id', description: 'ID Space', type: Number })
   @ApiResponse({ status: 200, description: 'Space berhasil dihapus' })
   @ApiResponse({ status: 404, description: 'Space tidak ditemukan' })
-  deleteSpace(@Param('id', ParseIntPipe) id: number, @MakerId() makerId: number) {
-    return this.adminService.deleteSpace(id, makerId);
+  deleteSpace(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.deleteSpace(id);
   }
 }

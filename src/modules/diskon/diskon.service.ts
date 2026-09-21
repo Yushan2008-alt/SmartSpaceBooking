@@ -10,12 +10,11 @@ import { CheckPromoDto } from './dto/check-promo.dto';
 export class DiskonService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findActive(makerId: number) {
+  async findActive() {
     const now = new Date();
 
     const activeDiskons = await this.prisma.diskon.findMany({
       where: {
-        maker_id: makerId,
         tanggal_awal: { lte: now },
         tanggal_akhir: { gte: now },
       },
@@ -28,11 +27,10 @@ export class DiskonService {
     };
   }
 
-  async checkPromo(dto: CheckPromoDto, makerId: number) {
-    const diskon = await this.prisma.diskon.findFirst({
+  async checkPromo(dto: CheckPromoDto) {
+    const diskon = await this.prisma.diskon.findUnique({
       where: {
         nama_diskon: dto.nama_diskon.trim(),
-        maker_id: makerId,
       },
     });
 
@@ -73,9 +71,9 @@ export class DiskonService {
     };
   }
 
-  async findOne(id: number, makerId: number) {
-    const diskon = await this.prisma.diskon.findFirst({
-      where: { id, maker_id: makerId },
+  async findOne(id: number) {
+    const diskon = await this.prisma.diskon.findUnique({
+      where: { id },
     });
 
     if (!diskon) {

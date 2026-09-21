@@ -8,14 +8,13 @@ const TIPE_ORDER = ['desk', 'meeting_room', 'private_office'] as const;
 export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getMonthly(query: HistoryQueryDto, makerId: number) {
+  async getMonthly(query: HistoryQueryDto) {
     const now = new Date();
     const year = query.year ?? now.getFullYear();
     const month = query.month ?? now.getMonth() + 1;
 
     const reservasis = await this.prisma.reservasi.findMany({
       where: {
-        maker_id: makerId,
         tanggal_reservasi: {
           gte: new Date(Date.UTC(year, month - 1, 1)),
           lt: new Date(Date.UTC(year, month, 1)),
@@ -63,8 +62,8 @@ export class ReportsService {
     };
   }
 
-  async getIncome(query: HistoryQueryDto, makerId: number) {
-    const full = await this.getMonthly(query, makerId);
+  async getIncome(query: HistoryQueryDto) {
+    const full = await this.getMonthly(query);
     const d = full.data;
     return {
       message: 'Ringkasan pendapatan bulanan berhasil dimuat.',

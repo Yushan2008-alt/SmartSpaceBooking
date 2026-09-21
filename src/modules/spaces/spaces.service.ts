@@ -32,9 +32,9 @@ export class SpacesService {
     };
   }
 
-  async checkAvailability(dto: CheckAvailabilityDto, makerId: number) {
-    const space = await this.prisma.space.findFirst({
-      where: { id: dto.id_space, maker_id: makerId },
+  async checkAvailability(dto: CheckAvailabilityDto) {
+    const space = await this.prisma.space.findUnique({
+      where: { id: dto.id_space },
     });
 
     if (!space) {
@@ -48,7 +48,6 @@ export class SpacesService {
     const conflicts = await this.prisma.reservasi.findMany({
       where: {
         id_space: dto.id_space,
-        maker_id: makerId,
         tanggal_reservasi: targetDate,
         status: { not: 'dibatalkan' },
         jam_mulai: { lt: jam_selesai },
@@ -89,10 +88,8 @@ export class SpacesService {
     };
   }
 
-  async findAll(query: QuerySpacesDto, makerId: number) {
-    const where: Prisma.SpaceWhereInput = {
-      maker_id: makerId,
-    };
+  async findAll(query: QuerySpacesDto) {
+    const where: Prisma.SpaceWhereInput = {};
 
     if (query.tipe) {
       where.tipe = query.tipe;
@@ -116,9 +113,9 @@ export class SpacesService {
     };
   }
 
-  async findOne(id: number, makerId: number) {
-    const space = await this.prisma.space.findFirst({
-      where: { id, maker_id: makerId },
+  async findOne(id: number) {
+    const space = await this.prisma.space.findUnique({
+      where: { id },
     });
 
     if (!space) {

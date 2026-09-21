@@ -15,28 +15,20 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiHeader,
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
 import { AdminService } from '../admin.service';
 import { CreateMemberAdminDto } from '../dto/create-member-admin.dto';
 import { UpdateMemberAdminDto } from '../dto/update-member-admin.dto';
-import { MakerAuthGuard } from '../../../common/guards/maker-auth.guard';
 import { JwtUserAuthGuard } from '../../../common/guards/jwt-user-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
-import { MakerId } from '../../../common/decorators/maker.decorator';
 
 @ApiTags('Manajemen Member (Admin)')
 @Controller('api/admin/members')
-@UseGuards(MakerAuthGuard, JwtUserAuthGuard, RolesGuard)
+@UseGuards(JwtUserAuthGuard, RolesGuard)
 @Roles('admin_space')
-@ApiHeader({
-  name: 'x-maker-key',
-  description: 'App key unik siswa untuk isolasi multi-tenant',
-  required: true,
-})
 @ApiBearerAuth('JWT-auth')
 export class AdminMembersController {
   constructor(private readonly adminService: AdminService) {}
@@ -44,11 +36,11 @@ export class AdminMembersController {
   @Get()
   @ApiOperation({
     summary: 'Daftar Semua Member / Pelanggan Coworking (Endpoint #27)',
-    description: 'Menampilkan seluruh akun pelanggan yang terdaftar di bawah tenant maker ini.',
+    description: 'Menampilkan seluruh akun pelanggan yang terdaftar.',
   })
   @ApiResponse({ status: 200, description: 'Daftar member berhasil dimuat' })
-  findAllMembers(@MakerId() makerId: number) {
-    return this.adminService.findAllMembers(makerId);
+  findAllMembers() {
+    return this.adminService.findAllMembers();
   }
 
   @Post()
@@ -59,8 +51,8 @@ export class AdminMembersController {
   })
   @ApiResponse({ status: 201, description: 'Member baru berhasil ditambahkan' })
   @ApiResponse({ status: 409, description: 'Username sudah digunakan' })
-  createMember(@MakerId() makerId: number, @Body() dto: CreateMemberAdminDto) {
-    return this.adminService.createMember(makerId, dto);
+  createMember(@Body() dto: CreateMemberAdminDto) {
+    return this.adminService.createMember(dto);
   }
 
   @Get(':id')
@@ -71,8 +63,8 @@ export class AdminMembersController {
   @ApiParam({ name: 'id', description: 'ID Member', type: Number })
   @ApiResponse({ status: 200, description: 'Detail member ditemukan' })
   @ApiResponse({ status: 404, description: 'Member tidak ditemukan' })
-  findMemberById(@Param('id', ParseIntPipe) id: number, @MakerId() makerId: number) {
-    return this.adminService.findMemberById(id, makerId);
+  findMemberById(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.findMemberById(id);
   }
 
   @Put(':id')
@@ -85,10 +77,9 @@ export class AdminMembersController {
   @ApiResponse({ status: 404, description: 'Member tidak ditemukan' })
   updateMember(
     @Param('id', ParseIntPipe) id: number,
-    @MakerId() makerId: number,
     @Body() dto: UpdateMemberAdminDto,
   ) {
-    return this.adminService.updateMember(id, makerId, dto);
+    return this.adminService.updateMember(id, dto);
   }
 
   @Delete(':id')
@@ -99,7 +90,7 @@ export class AdminMembersController {
   @ApiParam({ name: 'id', description: 'ID Member', type: Number })
   @ApiResponse({ status: 200, description: 'Member berhasil dihapus' })
   @ApiResponse({ status: 404, description: 'Member tidak ditemukan' })
-  deleteMember(@Param('id', ParseIntPipe) id: number, @MakerId() makerId: number) {
-    return this.adminService.deleteMember(id, makerId);
+  deleteMember(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.deleteMember(id);
   }
 }

@@ -38,7 +38,6 @@ function setupApp(app: NestExpressApplication) {
       'REST API Backend untuk Sistem Reservasi Coworking Space & Workstation — UKK RPL Paket B 2026/2027',
     )
     .setVersion('1.0')
-    .addApiKey({ type: 'apiKey', name: 'x-maker-key', in: 'header' }, 'x-maker-key')
     .addBearerAuth(
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' },
       'JWT-auth',

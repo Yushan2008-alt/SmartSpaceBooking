@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -8,45 +9,19 @@ datasource db {
 }
 
 // =============================================
-// APP MAKER (Multi-Tenancy)
-// =============================================
-model AppMaker {
-  id         Int      @id @default(autoincrement())
-  name       String
-  username   String   @unique
-  email      String   @unique
-  password   String
-  app_key    String   @unique // format: mk_xxx
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  users       User[]
-  members     Member[]
-  spaceOwners SpaceOwner[]
-  spaces      Space[]
-  diskons     Diskon[]
-  reservasis  Reservasi[]
-
-  @@map("app_maker")
-}
-
-// =============================================
 // USERS
 // =============================================
 model User {
   id         Int      @id @default(autoincrement())
-  username   String
+  username   String   @unique
   password   String
   role       Role     @default(member)
-  maker_id   Int
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  maker      AppMaker    @relation(fields: [maker_id], references: [id], onDelete: Cascade)
   member     Member?
   spaceOwner SpaceOwner?
 
-  @@unique([username, maker_id])
   @@map("users")
 }
 
@@ -66,12 +41,10 @@ model Member {
   alamat      String
   telp        String
   foto        String?
-  maker_id    Int
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
   user       User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  maker      AppMaker    @relation(fields: [maker_id], references: [id], onDelete: Cascade)
   reservasis Reservasi[]
 
   @@map("member")
@@ -86,12 +59,10 @@ model SpaceOwner {
   nama_coworking String
   nama_pemilik   String
   telp           String
-  maker_id       Int
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
   user   User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  maker  AppMaker @relation(fields: [maker_id], references: [id], onDelete: Cascade)
   spaces Space[]
 
   @@map("space_owner")
@@ -108,12 +79,10 @@ model Space {
   kapasitas      Int
   deskripsi      String
   foto           String?
-  maker_id       Int
   space_owner_id Int?
   created_at     DateTime  @default(now())
   updated_at     DateTime  @updatedAt
 
-  maker            AppMaker          @relation(fields: [maker_id], references: [id], onDelete: Cascade)
   spaceOwner       SpaceOwner?       @relation(fields: [space_owner_id], references: [id], onDelete: SetNull)
   reservasis       Reservasi[]
   detailReservasis DetailReservasi[]
@@ -132,19 +101,16 @@ enum SpaceTipe {
 // =============================================
 model Diskon {
   id                Int      @id @default(autoincrement())
-  nama_diskon       String
+  nama_diskon       String   @unique
   persentase_diskon Int
   tanggal_awal      DateTime
   tanggal_akhir     DateTime
-  maker_id          Int
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
 
-  maker            AppMaker          @relation(fields: [maker_id], references: [id], onDelete: Cascade)
   reservasis       Reservasi[]
   detailReservasis DetailReservasi[]
 
-  @@unique([nama_diskon, maker_id])
   @@map("diskon")
 }
 
@@ -166,14 +132,12 @@ model Reservasi {
   potongan_diskon   Int             @default(0)
   total_bayar       Int
   status            ReservasiStatus @default(belum_dikonfirm)
-  maker_id          Int
   created_at        DateTime        @default(now())
   updated_at        DateTime        @updatedAt
 
   member           Member            @relation(fields: [id_member], references: [id], onDelete: Cascade)
   space            Space             @relation(fields: [id_space], references: [id], onDelete: Cascade)
   diskon           Diskon?           @relation(fields: [id_diskon], references: [id], onDelete: SetNull)
-  maker            AppMaker          @relation(fields: [maker_id], references: [id], onDelete: Cascade)
   detailReservasis DetailReservasi[]
 
   @@map("reservasi")

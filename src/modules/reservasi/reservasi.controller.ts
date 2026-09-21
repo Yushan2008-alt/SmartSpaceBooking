@@ -15,28 +15,20 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiHeader,
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
 import { ReservasiService } from './reservasi.service';
 import { CreateReservasiDto } from './dto/create-reservasi.dto';
 import { HistoryQueryDto } from './dto/history-query.dto';
-import { MakerAuthGuard } from '../../common/guards/maker-auth.guard';
 import { JwtUserAuthGuard } from '../../common/guards/jwt-user-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { MakerId, CurrentMaker } from '../../common/decorators/maker.decorator';
 import { CurrentUser, CurrentUserId } from '../../common/decorators/user.decorator';
 
 @ApiTags('Reservasi (Member)')
 @Controller('api/reservasi')
-@UseGuards(MakerAuthGuard, JwtUserAuthGuard, RolesGuard)
-@ApiHeader({
-  name: 'x-maker-key',
-  description: 'App key unik siswa untuk isolasi multi-tenant',
-  required: true,
-})
+@UseGuards(JwtUserAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
 export class ReservasiController {
   constructor(private readonly reservasiService: ReservasiService) {}
@@ -54,9 +46,8 @@ export class ReservasiController {
   create(
     @Body() dto: CreateReservasiDto,
     @CurrentUserId() userId: number,
-    @MakerId() makerId: number,
   ) {
-    return this.reservasiService.create(dto, userId, makerId);
+    return this.reservasiService.create(dto, userId);
   }
 
   @Get('my')
@@ -66,11 +57,8 @@ export class ReservasiController {
     description: 'Menampilkan seluruh daftar pemesanan aktif maupun lampau milik member yang sedang login.',
   })
   @ApiResponse({ status: 200, description: 'Daftar reservasi saya' })
-  getMyReservations(
-    @CurrentUserId() userId: number,
-    @MakerId() makerId: number,
-  ) {
-    return this.reservasiService.getMyReservations(userId, makerId);
+  getMyReservations(@CurrentUserId() userId: number) {
+    return this.reservasiService.getMyReservations(userId);
   }
 
   @Get('my/history')
@@ -83,9 +71,8 @@ export class ReservasiController {
   getMyHistory(
     @Query() query: HistoryQueryDto,
     @CurrentUserId() userId: number,
-    @MakerId() makerId: number,
   ) {
-    return this.reservasiService.getMyHistory(userId, makerId, query);
+    return this.reservasiService.getMyHistory(userId, query);
   }
 
   @Get(':id/e-ticket')
@@ -100,9 +87,8 @@ export class ReservasiController {
   getETicket(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: any,
-    @CurrentMaker() maker: any,
   ) {
-    return this.reservasiService.getETicket(id, user, maker);
+    return this.reservasiService.getETicket(id, user);
   }
 
   @Get(':id')
@@ -116,9 +102,8 @@ export class ReservasiController {
   getDetail(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: any,
-    @MakerId() makerId: number,
   ) {
-    return this.reservasiService.getDetail(id, user, makerId);
+    return this.reservasiService.getDetail(id, user);
   }
 
   @Patch(':id/cancel')
@@ -133,8 +118,7 @@ export class ReservasiController {
   cancel(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: any,
-    @MakerId() makerId: number,
   ) {
-    return this.reservasiService.cancel(id, user, makerId);
+    return this.reservasiService.cancel(id, user);
   }
 }

@@ -15,28 +15,20 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiHeader,
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
 import { AdminService } from '../admin.service';
 import { CreateDiskonDto } from '../dto/create-diskon.dto';
 import { UpdateDiskonDto } from '../dto/update-diskon.dto';
-import { MakerAuthGuard } from '../../../common/guards/maker-auth.guard';
 import { JwtUserAuthGuard } from '../../../common/guards/jwt-user-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
-import { MakerId } from '../../../common/decorators/maker.decorator';
 
 @ApiTags('Manajemen Diskon (Admin)')
 @Controller('api/admin/diskon')
-@UseGuards(MakerAuthGuard, JwtUserAuthGuard, RolesGuard)
+@UseGuards(JwtUserAuthGuard, RolesGuard)
 @Roles('admin_space')
-@ApiHeader({
-  name: 'x-maker-key',
-  description: 'App key unik siswa untuk isolasi multi-tenant',
-  required: true,
-})
 @ApiBearerAuth('JWT-auth')
 export class AdminDiskonController {
   constructor(private readonly adminService: AdminService) {}
@@ -47,8 +39,8 @@ export class AdminDiskonController {
     description: 'Menampilkan seluruh daftar promo yang pernah dibuat oleh admin.',
   })
   @ApiResponse({ status: 200, description: 'Daftar diskon berhasil dimuat' })
-  findAllDiskon(@MakerId() makerId: number) {
-    return this.adminService.findAllDiskon(makerId);
+  findAllDiskon() {
+    return this.adminService.findAllDiskon();
   }
 
   @Post()
@@ -59,8 +51,8 @@ export class AdminDiskonController {
   })
   @ApiResponse({ status: 201, description: 'Diskon baru berhasil dibuat' })
   @ApiResponse({ status: 409, description: 'Kode promo sudah digunakan' })
-  createDiskon(@MakerId() makerId: number, @Body() dto: CreateDiskonDto) {
-    return this.adminService.createDiskon(makerId, dto);
+  createDiskon(@Body() dto: CreateDiskonDto) {
+    return this.adminService.createDiskon(dto);
   }
 
   @Get(':id')
@@ -71,8 +63,8 @@ export class AdminDiskonController {
   @ApiParam({ name: 'id', description: 'ID Diskon', type: Number })
   @ApiResponse({ status: 200, description: 'Detail diskon ditemukan' })
   @ApiResponse({ status: 404, description: 'Diskon tidak ditemukan' })
-  findDiskonById(@Param('id', ParseIntPipe) id: number, @MakerId() makerId: number) {
-    return this.adminService.findDiskonById(id, makerId);
+  findDiskonById(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.findDiskonById(id);
   }
 
   @Put(':id')
@@ -85,10 +77,9 @@ export class AdminDiskonController {
   @ApiResponse({ status: 404, description: 'Diskon tidak ditemukan' })
   updateDiskon(
     @Param('id', ParseIntPipe) id: number,
-    @MakerId() makerId: number,
     @Body() dto: UpdateDiskonDto,
   ) {
-    return this.adminService.updateDiskon(id, makerId, dto);
+    return this.adminService.updateDiskon(id, dto);
   }
 
   @Delete(':id')
@@ -99,7 +90,7 @@ export class AdminDiskonController {
   @ApiParam({ name: 'id', description: 'ID Diskon', type: Number })
   @ApiResponse({ status: 200, description: 'Diskon berhasil dihapus' })
   @ApiResponse({ status: 404, description: 'Diskon tidak ditemukan' })
-  deleteDiskon(@Param('id', ParseIntPipe) id: number, @MakerId() makerId: number) {
-    return this.adminService.deleteDiskon(id, makerId);
+  deleteDiskon(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.deleteDiskon(id);
   }
 }

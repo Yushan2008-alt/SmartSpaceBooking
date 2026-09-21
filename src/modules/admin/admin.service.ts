@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import { Prisma, ReservasiStatus, Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -27,9 +26,9 @@ export class AdminService {
   // ==========================================
   // 1. PROFIL COWORKING (Endpoint #25, #26)
   // ==========================================
-  async getProfile(userId: number, makerId: number) {
-    const spaceOwner = await this.prisma.spaceOwner.findFirst({
-      where: { user_id: userId, maker_id: makerId },
+  async getProfile(userId: number) {
+    const spaceOwner = await this.prisma.spaceOwner.findUnique({
+      where: { user_id: userId },
       include: {
         user: {
           select: { id: true, username: true, role: true, created_at: true },
@@ -47,9 +46,9 @@ export class AdminService {
     };
   }
 
-  async updateProfile(userId: number, makerId: number, dto: UpdateCoworkingProfileDto) {
-    const spaceOwner = await this.prisma.spaceOwner.findFirst({
-      where: { user_id: userId, maker_id: makerId },
+  async updateProfile(userId: number, dto: UpdateCoworkingProfileDto) {
+    const spaceOwner = await this.prisma.spaceOwner.findUnique({
+      where: { user_id: userId },
     });
 
     if (!spaceOwner) {
@@ -74,9 +73,8 @@ export class AdminService {
   // ==========================================
   // 2. MANAJEMEN MEMBER (Endpoint #27–31)
   // ==========================================
-  async findAllMembers(makerId: number) {
+  async findAllMembers() {
     const members = await this.prisma.member.findMany({
-      where: { maker_id: makerId },
       include: {
         user: { select: { id: true, username: true, role: true, created_at: true } },
       },
@@ -89,18 +87,13 @@ export class AdminService {
     };
   }
 
-  async createMember(makerId: number, dto: CreateMemberAdminDto) {
+  async createMember(dto: CreateMemberAdminDto) {
     const existing = await this.prisma.user.findUnique({
-      where: {
-        username_maker_id: {
-          username: dto.username,
-          maker_id: makerId,
-        },
-      },
+      where: { username: dto.username },
     });
 
     if (existing) {
-      throw new ConflictException(`Username '${dto.username}' sudah terdaftar pada tenant ini.`);
+      throw new ConflictException(`Username '${dto.username}' sudah terdaftar.`);
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -110,7 +103,6 @@ export class AdminService {
         username: dto.username,
         password: hashedPassword,
         role: Role.member,
-        maker_id: makerId,
         member: {
           create: {
             nama_member: dto.nama_member,
@@ -118,7 +110,6 @@ export class AdminService {
             alamat: dto.alamat,
             telp: dto.telp,
             foto: dto.foto || null,
-            maker_id: makerId,
           },
         },
       },
@@ -141,9 +132,9 @@ export class AdminService {
     };
   }
 
-  async findMemberById(id: number, makerId: number) {
-    const member = await this.prisma.member.findFirst({
-      where: { id, maker_id: makerId },
+  async findMemberById(id: number) {
+    const member = await this.prisma.member.findUnique({
+      where: { id },
       include: {
         user: { select: { id: true, username: true, role: true, created_at: true } },
       },
@@ -159,9 +150,9 @@ export class AdminService {
     };
   }
 
-  async updateMember(id: number, makerId: number, dto: UpdateMemberAdminDto) {
-    const member = await this.prisma.member.findFirst({
-      where: { id, maker_id: makerId },
+  async updateMember(id: number, dto: UpdateMemberAdminDto) {
+    const member = await this.prisma.member.findUnique({
+      where: { id },
     });
 
     if (!member) {
@@ -195,9 +186,9 @@ export class AdminService {
     };
   }
 
-  async deleteMember(id: number, makerId: number) {
-    const member = await this.prisma.member.findFirst({
-      where: { id, maker_id: makerId },
+  async deleteMember(id: number) {
+    const member = await this.prisma.member.findUnique({
+      where: { id },
     });
 
     if (!member) {
@@ -210,17 +201,16 @@ export class AdminService {
     });
 
     return {
-      message: 'Data member berhasil dihapus.',
+      message: 'Data member dan akun login berhasil dihapus.',
       data: { id },
     };
   }
 
   // ==========================================
-  // 3. MANAJEMEN SPACES (Endpoint #32–36)
+  // 3. MANAJEMEN SPACE (Endpoint #32–36)
   // ==========================================
-  async findAllSpaces(makerId: number) {
+  async findAllSpaces() {
     const spaces = await this.prisma.space.findMany({
-      where: { maker_id: makerId },
       orderBy: { id: 'asc' },
     });
 
@@ -230,7 +220,7 @@ export class AdminService {
     };
   }
 
-  async createSpace(makerId: number, dto: CreateSpaceDto) {
+  async createSpace(dto: CreateSpaceDto) {
     const space = await this.prisma.space.create({
       data: {
         nama_space: dto.nama_space,
@@ -239,7 +229,6 @@ export class AdminService {
         kapasitas: dto.kapasitas,
         deskripsi: dto.deskripsi,
         foto: dto.foto || null,
-        maker_id: makerId,
       },
     });
 
@@ -249,9 +238,9 @@ export class AdminService {
     };
   }
 
-  async findSpaceById(id: number, makerId: number) {
-    const space = await this.prisma.space.findFirst({
-      where: { id, maker_id: makerId },
+  async findSpaceById(id: number) {
+    const space = await this.prisma.space.findUnique({
+      where: { id },
     });
 
     if (!space) {
@@ -264,9 +253,9 @@ export class AdminService {
     };
   }
 
-  async updateSpace(id: number, makerId: number, dto: UpdateSpaceDto) {
-    const space = await this.prisma.space.findFirst({
-      where: { id, maker_id: makerId },
+  async updateSpace(id: number, dto: UpdateSpaceDto) {
+    const space = await this.prisma.space.findUnique({
+      where: { id },
     });
 
     if (!space) {
@@ -291,9 +280,9 @@ export class AdminService {
     };
   }
 
-  async deleteSpace(id: number, makerId: number) {
-    const space = await this.prisma.space.findFirst({
-      where: { id, maker_id: makerId },
+  async deleteSpace(id: number) {
+    const space = await this.prisma.space.findUnique({
+      where: { id },
     });
 
     if (!space) {
@@ -313,9 +302,8 @@ export class AdminService {
   // ==========================================
   // 4. MANAJEMEN DISKON (Endpoint #37–41)
   // ==========================================
-  async findAllDiskon(makerId: number) {
+  async findAllDiskon() {
     const diskons = await this.prisma.diskon.findMany({
-      where: { maker_id: makerId },
       orderBy: { id: 'asc' },
     });
 
@@ -325,12 +313,9 @@ export class AdminService {
     };
   }
 
-  async createDiskon(makerId: number, dto: CreateDiskonDto) {
-    const existing = await this.prisma.diskon.findFirst({
-      where: {
-        nama_diskon: dto.nama_diskon.trim(),
-        maker_id: makerId,
-      },
+  async createDiskon(dto: CreateDiskonDto) {
+    const existing = await this.prisma.diskon.findUnique({
+      where: { nama_diskon: dto.nama_diskon.trim() },
     });
 
     if (existing) {
@@ -343,7 +328,6 @@ export class AdminService {
         persentase_diskon: dto.persentase_diskon,
         tanggal_awal: new Date(dto.tanggal_awal),
         tanggal_akhir: new Date(dto.tanggal_akhir),
-        maker_id: makerId,
       },
     });
 
@@ -353,9 +337,9 @@ export class AdminService {
     };
   }
 
-  async findDiskonById(id: number, makerId: number) {
-    const diskon = await this.prisma.diskon.findFirst({
-      where: { id, maker_id: makerId },
+  async findDiskonById(id: number) {
+    const diskon = await this.prisma.diskon.findUnique({
+      where: { id },
     });
 
     if (!diskon) {
@@ -368,9 +352,9 @@ export class AdminService {
     };
   }
 
-  async updateDiskon(id: number, makerId: number, dto: UpdateDiskonDto) {
-    const diskon = await this.prisma.diskon.findFirst({
-      where: { id, maker_id: makerId },
+  async updateDiskon(id: number, dto: UpdateDiskonDto) {
+    const diskon = await this.prisma.diskon.findUnique({
+      where: { id },
     });
 
     if (!diskon) {
@@ -378,12 +362,8 @@ export class AdminService {
     }
 
     if (dto.nama_diskon && dto.nama_diskon.trim() !== diskon.nama_diskon) {
-      const existing = await this.prisma.diskon.findFirst({
-        where: {
-          nama_diskon: dto.nama_diskon.trim(),
-          maker_id: makerId,
-          id: { not: id },
-        },
+      const existing = await this.prisma.diskon.findUnique({
+        where: { nama_diskon: dto.nama_diskon.trim() },
       });
       if (existing) {
         throw new ConflictException(`Kode promo '${dto.nama_diskon}' sudah digunakan.`);
@@ -406,9 +386,9 @@ export class AdminService {
     };
   }
 
-  async deleteDiskon(id: number, makerId: number) {
-    const diskon = await this.prisma.diskon.findFirst({
-      where: { id, maker_id: makerId },
+  async deleteDiskon(id: number) {
+    const diskon = await this.prisma.diskon.findUnique({
+      where: { id },
     });
 
     if (!diskon) {
@@ -428,10 +408,8 @@ export class AdminService {
   // ==========================================
   // 5. TRANSAKSI RESERVASI & STATUS (Endpoint #42–45)
   // ==========================================
-  async findAllReservasi(makerId: number, query: QueryAdminReservasiDto) {
-    const where: Prisma.ReservasiWhereInput = {
-      maker_id: makerId,
-    };
+  async findAllReservasi(query: QueryAdminReservasiDto) {
+    const where: Prisma.ReservasiWhereInput = {};
 
     if (query.id_space) {
       where.id_space = query.id_space;
@@ -471,9 +449,9 @@ export class AdminService {
     };
   }
 
-  async updateReservasiStatus(id: number, makerId: number, newStatus: ReservasiStatus) {
-    const reservasi = await this.prisma.reservasi.findFirst({
-      where: { id, maker_id: makerId },
+  async updateReservasiStatus(id: number, newStatus: ReservasiStatus) {
+    const reservasi = await this.prisma.reservasi.findUnique({
+      where: { id },
     });
 
     if (!reservasi) {
@@ -499,9 +477,9 @@ export class AdminService {
     };
   }
 
-  async checkIn(id: number, makerId: number) {
-    const reservasi = await this.prisma.reservasi.findFirst({
-      where: { id, maker_id: makerId },
+  async checkIn(id: number) {
+    const reservasi = await this.prisma.reservasi.findUnique({
+      where: { id },
     });
 
     if (!reservasi) {
@@ -526,9 +504,9 @@ export class AdminService {
     };
   }
 
-  async checkOut(id: number, makerId: number) {
-    const reservasi = await this.prisma.reservasi.findFirst({
-      where: { id, maker_id: makerId },
+  async checkOut(id: number) {
+    const reservasi = await this.prisma.reservasi.findUnique({
+      where: { id },
     });
 
     if (!reservasi) {
