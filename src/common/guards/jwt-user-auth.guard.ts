@@ -27,28 +27,29 @@ export class JwtUserAuthGuard implements CanActivate {
     const secret =
       this.configService.get<string>('JWT_SECRET_USER') || 'smart_space_user_super_secret_jwt_key_2026';
 
+    let decoded: any;
     try {
-      const decoded = jwt.verify(token, secret) as any;
-      
-      const user = await this.prisma.user.findUnique({
-        where: { id: decoded.sub },
-        include: {
-          member: true,
-          spaceOwner: true,
-        },
-      });
-
-      if (!user) {
-        throw new UnauthorizedException('Pengguna tidak ditemukan atau sudah tidak aktif.');
-      }
-
-      req.user = user;
-      req.user_id = user.id;
-      req.user_role = user.role;
-
-      return true;
+      decoded = jwt.verify(token, secret) as any;
     } catch (err) {
-      throw new UnauthorizedException(err.message || 'Token tidak valid atau telah kadaluarsa.');
+      throw new UnauthorizedException('Token tidak valid atau telah kadaluarsa.');
     }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: decoded.sub },
+      include: {
+        member: true,
+        spaceOwner: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Pengguna tidak ditemukan atau sudah tidak aktif.');
+    }
+
+    req.user = user;
+    req.user_id = user.id;
+    req.user_role = user.role;
+
+    return true;
   }
 }

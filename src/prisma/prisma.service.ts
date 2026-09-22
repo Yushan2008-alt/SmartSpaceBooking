@@ -8,11 +8,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   constructor() {
     // Resilient connection string handling for local DNS
     const rawUrl = process.env.DATABASE_URL || '';
-    const dbUrl =
+    let dbUrl =
       rawUrl.includes('aws-0-ap-southeast-1.pooler.supabase.com') && !process.env.VERCEL
         ? rawUrl.replace('aws-0-ap-southeast-1.pooler.supabase.com:6543', '52.77.146.31:5432') +
           '&sslaccept=accept_invalid_certs'
         : rawUrl;
+
+    if (dbUrl.includes(':6543') && !dbUrl.includes('pgbouncer=true')) {
+      dbUrl += (dbUrl.includes('?') ? '&' : '?') + 'pgbouncer=true';
+    }
 
     super({
       datasources: { db: { url: dbUrl } },

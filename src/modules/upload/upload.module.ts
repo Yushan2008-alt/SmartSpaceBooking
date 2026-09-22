@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UploadController } from './upload.controller';
 import { JwtUserAuthGuard } from '../../common/guards/jwt-user-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { MulterModule } from '@nestjs/platform-express';
 import { STORAGE_SERVICE } from './storage/storage.interface';
 import { LocalDiskStorageService } from './storage/local-disk-storage.service';
@@ -12,6 +13,7 @@ import { CloudinaryStorageService } from './storage/cloudinary-storage.service';
   controllers: [UploadController],
   providers: [
     JwtUserAuthGuard,
+    RolesGuard,
     {
       provide: STORAGE_SERVICE,
       useFactory: (configService: ConfigService) => {

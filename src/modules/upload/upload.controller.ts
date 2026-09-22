@@ -20,6 +20,8 @@ import {
 } from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
 import { JwtUserAuthGuard } from '../../common/guards/jwt-user-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { STORAGE_SERVICE, StorageService } from './storage/storage.interface';
 
 const IMAGE_MIME = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
@@ -48,7 +50,7 @@ const apiFileBody = {
 
 @ApiTags('Upload Media')
 @Controller('api/upload')
-@UseGuards(JwtUserAuthGuard)
+@UseGuards(JwtUserAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
 export class UploadController {
   constructor(
@@ -78,11 +80,13 @@ export class UploadController {
   }
 
   @Post('spaces')
+  @Roles('admin_space')
   @UseInterceptors(FileInterceptor('file', multerOptions))
   @ApiConsumes('multipart/form-data')
   @ApiBody(apiFileBody)
   @ApiOperation({ summary: 'Upload Foto Ruangan / Meja Space (Endpoint #49)' })
   @ApiResponse({ status: 201, description: 'Foto space terunggah' })
+  @ApiResponse({ status: 403, description: 'Akses ditolak: hanya pengelola (admin_space) yang berhak mengunggah foto space' })
   uploadSpace(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
     return this.handleUpload(file, 'spaces', req);
   }
